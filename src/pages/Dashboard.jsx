@@ -1,21 +1,96 @@
-import { useState } from 'react';
-import { Plus, Search, Briefcase } from 'lucide-react';
-import Navbar from '../components/layout/Navbar';
-import Button from '../components/common/Button';
-import { useJobs } from '../hooks/useJobs';
-import Loader from '../components/common/Loader';
-import { KANBAN_COLUMNS } from '../utils/constnats';
+import { useState } from "react";
+import { Plus, Search, Briefcase } from "lucide-react";
+import Navbar from "../components/layout/Navbar";
+import Button from "../components/common/Button";
+import { useJobs } from "../hooks/useJobs";
+import Loader from "../components/common/Loader";
+import { KANBAN_COLUMNS } from "../utils/constnats";
+import Modal from "../components/common/Modal";
+import JobForm from "../components/job/JobForm";
+import JobDetails from "../components/job/JobDetails";
+import ConfirmDialog from "../components/common/ConfirmDialog";
 
 const Dashboard = () => {
-  const { jobs, loading } = useJobs();
-  const [searchTerm, setSearchTerm] = useState('');
+  const { jobs, loading, createJob, updateJob, deleteJob } = useJobs();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showJobModal, setShowJobModal] = useState(false);
+  const [selectedJob, setSelectedJob] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [viewMode, setViewMode] = useState("form");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [jobToDelete, setJobToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleAddJob = () => {
+    setSelectedJob(null);
+    setViewMode("form");
+    setShowJobModal(true);
+  };
+
+  const handleEditJob = (job) => {
+    setSelectedJob(job);
+    setViewMode("details");
+    setShowJobModal(true);
+  };
+
+  const handleEditFromDetails = () => {
+    setViewMode("form");
+  };
+
+  const handleDeleteClick = (jobId) => {
+    setJobToDelete(jobId);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    setDeleting(true);
+    try {
+      await deleteJob(jobToDelete);
+      setShowDeleteConfirm(false);
+      setShowJobModal(false);
+      setJobToDelete(null);
+      setSelectedJob(null);
+    } catch (error) {
+      console.error("Error deleting job:", error);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirm(false);
+    setJobToDelete(null);
+  };
+
+  const handleCloseModal = () => {
+    setShowJobModal(false);
+    setSelectedJob(null);
+    setViewMode("form");
+  };
+
+  const handleSubmitJob = async (jobData) => {
+    setSubmitting(true);
+    try {
+      if (selectedJob) {
+        await updateJob(selectedJob._id, jobData);
+      } else {
+        await createJob(jobData);
+      }
+      handleCloseModal();
+    } catch (error) {
+      console.error("Error submitting job:", error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const getJobsByStatus = (status) => {
-    return jobs.filter((job) => 
-      job.status === status && 
-      (searchTerm === '' || 
-       job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       job.position.toLowerCase().includes(searchTerm.toLowerCase()))
+    return jobs.filter(
+      (job) =>
+        job.status === status &&
+        (searchTerm === "" ||
+          job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          job.position.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   };
 
@@ -30,15 +105,19 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Job Applications</h1>
-            <p className="text-gray-600 mt-1">Track and manage your job search</p>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Job Applications
+            </h1>
+            <p className="text-gray-600 mt-1">
+              Track and manage your job search
+            </p>
           </div>
-          <Button variant="primary" className="gap-2">
+          <Button variant="primary" className="gap-2" onClick={handleAddJob}>
             <Plus size={20} />
             Add New Job
           </Button>
@@ -47,7 +126,10 @@ const Dashboard = () => {
         {/* Search Bar */}
         <div className="mb-6">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <Search
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              size={20}
+            />
             <input
               type="text"
               placeholder="Search companies or positions..."
@@ -63,13 +145,18 @@ const Dashboard = () => {
           {KANBAN_COLUMNS.map((column) => {
             const count = getJobsByStatus(column.id).length;
             return (
-              <div key={column.id} className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+              <div
+                key={column.id}
+                className="bg-white rounded-lg p-6 shadow-sm border border-gray-200"
+              >
                 <div className="flex items-center gap-2 mb-2">
-                  <div 
-                    className="w-3 h-3 rounded-full" 
+                  <div
+                    className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: column.color }}
                   ></div>
-                  <h3 className="text-sm font-medium text-gray-600">{column.title}</h3>
+                  <h3 className="text-sm font-medium text-gray-600">
+                    {column.title}
+                  </h3>
                 </div>
                 <p className="text-3xl font-bold text-gray-900">{count}</p>
               </div>
@@ -82,41 +169,57 @@ const Dashboard = () => {
           {KANBAN_COLUMNS.map((column) => {
             const columnJobs = getJobsByStatus(column.id);
             return (
-              <div key={column.id} className="bg-gray-100 rounded-lg p-4 min-h-[400px]">
+              <div
+                key={column.id}
+                className="bg-gray-100 rounded-lg p-4 min-h-[400px]"
+              >
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                    <div 
-                      className="w-3 h-3 rounded-full" 
+                    <div
+                      className="w-3 h-3 rounded-full"
                       style={{ backgroundColor: column.color }}
                     ></div>
                     {column.title}
-                    <span className="text-gray-500 text-sm">({columnJobs.length})</span>
+                    <span className="text-gray-500 text-sm">
+                      ({columnJobs.length})
+                    </span>
                   </h3>
                 </div>
 
                 <div className="space-y-3">
                   {columnJobs.length === 0 ? (
-                    <p className="text-gray-500 text-sm text-center py-8">No jobs yet</p>
+                    <p className="text-gray-500 text-sm text-center py-8">
+                      No jobs yet
+                    </p>
                   ) : (
                     columnJobs.map((job) => (
                       <div
                         key={job._id}
+                        onClick={() => handleEditJob(job)}
                         className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer border border-gray-200"
                       >
-                        <h4 className="font-semibold text-gray-900 mb-1">{job.company}</h4>
-                        <p className="text-sm text-gray-600 mb-2">{job.position}</p>
+                        <h4 className="font-semibold text-gray-900 mb-1">
+                          {job.company}
+                        </h4>
+                        <p className="text-sm text-gray-600 mb-2">
+                          {job.position}
+                        </p>
                         {job.location && (
-                          <p className="text-xs text-gray-500 mb-3">{job.location}</p>
+                          <p className="text-xs text-gray-500 mb-3">
+                            {job.location}
+                          </p>
                         )}
                         <div className="flex items-center gap-2 flex-wrap">
                           {job.priority && (
-                            <span className={`text-xs px-2 py-1 rounded ${
-                              job.priority === 'High' 
-                                ? 'bg-red-100 text-red-700'
-                                : job.priority === 'Medium'
-                                ? 'bg-yellow-100 text-yellow-700'
-                                : 'bg-gray-100 text-gray-700'
-                            }`}>
+                            <span
+                              className={`text-xs px-2 py-1 rounded ${
+                                job.priority === "High"
+                                  ? "bg-red-100 text-red-700"
+                                  : job.priority === "Medium"
+                                  ? "bg-yellow-100 text-yellow-700"
+                                  : "bg-gray-100 text-gray-700"
+                              }`}
+                            >
                               {job.priority}
                             </span>
                           )}
@@ -141,8 +244,12 @@ const Dashboard = () => {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-200 rounded-full mb-4">
               <Briefcase className="text-gray-400" size={32} />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No jobs yet</h3>
-            <p className="text-gray-600 mb-6">Start tracking your job applications</p>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              No jobs yet
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Start tracking your job applications
+            </p>
             <Button variant="primary" className="gap-2">
               <Plus size={20} />
               Add Your First Job
@@ -150,6 +257,47 @@ const Dashboard = () => {
           </div>
         )}
       </div>
+
+      {/* Job Modal */}
+      <Modal
+        isOpen={showJobModal}
+        onClose={handleCloseModal}
+        title={
+          viewMode === "details"
+            ? "Job Application Details"
+            : selectedJob
+            ? "Edit Job Application"
+            : "Add New Job Application"
+        }
+        size="large"
+      >
+        {viewMode === "details" ? (
+          <JobDetails
+            job={selectedJob}
+            onEdit={handleEditFromDetails}
+            onDelete={handleDeleteClick}
+            onClose={handleCloseModal}
+          />
+        ) : (
+          <JobForm
+            job={selectedJob}
+            onSubmit={handleSubmitJob}
+            onClose={handleCloseModal}
+            onDelete={handleDeleteClick}
+            loading={submitting}
+          />
+        )}
+      </Modal>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        title="Delete Job Application"
+        message="Are you sure you want to delete this job application? This action cannot be undone."
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        loading={deleting}
+      />
     </div>
   );
 };
