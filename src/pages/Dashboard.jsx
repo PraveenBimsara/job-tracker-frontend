@@ -9,6 +9,7 @@ import Modal from "../components/common/Modal";
 import JobForm from "../components/job/JobForm";
 import JobDetails from "../components/job/JobDetails";
 import ConfirmDialog from "../components/common/ConfirmDialog";
+import RecommendedJobs from '../components/job/RecommendedJobs';
 
 const Dashboard = () => {
   const { jobs, loading, createJob, updateJob, deleteJob } = useJobs();
@@ -93,6 +94,25 @@ const Dashboard = () => {
           job.position.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   };
+
+  const handleImportJob = (job) => {
+  setSelectedJob({
+    company: job.company,
+    position: job.title,
+    location: job.location,
+    jobUrl: job.url,
+    salary: {
+      min: job.salary_min,
+      max: job.salary_max,
+    },
+    notes: `Imported from ${job.source}`,
+    status: 'Wishlist',
+    priority: 'Medium',
+    jobType: 'Full-time',
+  });
+  setViewMode('form');
+  setShowJobModal(true);
+};
 
   if (loading) {
     return (
@@ -237,6 +257,9 @@ const Dashboard = () => {
             );
           })}
         </div>
+
+                <RecommendedJobs onImport={handleImportJob} />
+
 
         {/* Empty State */}
         {jobs.length === 0 && (

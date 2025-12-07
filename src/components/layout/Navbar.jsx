@@ -1,8 +1,16 @@
-import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Briefcase, LogOut, Menu, X, LayoutDashboard, BarChart3 } from 'lucide-react';
-import { useAuth } from '../../hooks/useAuth';
-import { getInitials } from '../../utils/helpers';
+import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import {
+  Briefcase,
+  LogOut,
+  Menu,
+  X,
+  LayoutDashboard,
+  BarChart3,
+  Search,
+} from "lucide-react";
+import { useAuth } from "../../hooks/useAuth";
+import { getInitials } from "../../utils/helpers";
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -12,8 +20,9 @@ const Navbar = () => {
   const isActive = (path) => location.pathname === path;
 
   const navLinks = [
-    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/analytics', label: 'Analytics', icon: BarChart3 },
+    { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { path: "/analytics", label: "Analytics", icon: BarChart3 },
+    { path: "/browse-jobs", label: "Browse Jobs", icon: Search },
   ];
 
   return (
@@ -25,7 +34,9 @@ const Navbar = () => {
             <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
               <Briefcase className="text-white" size={24} />
             </div>
-            <span className="text-xl font-bold text-gray-900 hidden sm:block">JobTrackr</span>
+            <span className="text-xl font-bold text-gray-900 hidden sm:block">
+              JobTrackr
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -36,8 +47,8 @@ const Navbar = () => {
                 to={link.path}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
                   isActive(link.path)
-                    ? 'bg-primary-50 text-primary-600'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    ? "bg-primary-50 text-primary-600"
+                    : "text-gray-600 hover:bg-gray-100"
                 }`}
               >
                 <link.icon size={20} />
@@ -55,7 +66,9 @@ const Navbar = () => {
               <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
                 {getInitials(user?.name)}
               </div>
-              <span className="font-medium text-gray-700 hidden sm:block">{user?.name}</span>
+              <span className="font-medium text-gray-700 hidden sm:block">
+                {user?.name}
+              </span>
             </Link>
 
             <button
@@ -86,8 +99,8 @@ const Navbar = () => {
                 onClick={() => setShowMenu(false)}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors mb-2 ${
                   isActive(link.path)
-                    ? 'bg-primary-50 text-primary-600'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    ? "bg-primary-50 text-primary-600"
+                    : "text-gray-600 hover:bg-gray-100"
                 }`}
               >
                 <link.icon size={20} />

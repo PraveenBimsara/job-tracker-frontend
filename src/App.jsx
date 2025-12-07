@@ -1,14 +1,15 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
-import Analytics from './pages/Analytics';
-import Profile from './pages/Profile';
-import ProtectedRoute from './components/layout/ProtectedRoute';
-import { useAuth } from './hooks/useAuth';
-import Loader from './components/common/Loader';
+import { Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Dashboard from "./pages/Dashboard";
+import Analytics from "./pages/Analytics";
+import Profile from "./pages/Profile";
+import ProtectedRoute from "./components/layout/ProtectedRoute";
+import { useAuth } from "./hooks/useAuth";
+import Loader from "./components/common/Loader";
+import BrowseJobs from "./pages/BrowseJobs";
 
 function App() {
   const { loading } = useAuth();
@@ -49,6 +50,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/browse-jobs"
+          element={
+            <ProtectedRoute>
+              <BrowseJobs />
             </ProtectedRoute>
           }
         />
